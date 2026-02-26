@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Voter Management System - Amit Murolia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f1f5f9; font-family: 'Sakal Bharti', Arial, sans-serif; }
+        .no-print { padding: 20px; }
+        .branding { background: #0f172a; color: white; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 20px; border-bottom: 4px solid #0d6efd; }
+        
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print, .nav-tabs, button, .filter-card, .btn, .search-page { display: none !important; }
+            .print-section { display: none; }
+            .print-active { display: block !important; width: 100%; }
+
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; page-break-inside: auto; }
+            thead { display: table-header-group; } 
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            th, td { border: 1px solid black !important; padding: 6px; text-align: center; font-size: 11px; }
+            .header-main { text-align: center; font-weight: bold; text-transform: uppercase; }
+            .instr { font-size: 10px; margin: 8px 0; font-family: Arial; font-style: italic; text-align: left; }
+            .footer-container { margin-top: 30px; display: block; page-break-inside: avoid; }
+            .footer-sign { display: flex; justify-content: space-between; align-items: flex-end; padding: 20px 10px; }
+            .sign-left { text-align: left; font-weight: bold; width: 50%; }
+            .sign-right { text-align: center; font-weight: bold; width: 40%; border-top: 1px dashed black; padding-top: 5px; }
+        }
+
+        .print-section { display: none; }
+        .tally-box { font-weight: bold; padding: 10px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .search-page { background: #e3f2fd; border: 2px solid #2196f3; padding: 15px; border-radius: 10px; margin-top: 15px; }
+        .search-header { border-bottom: 1px solid #90caf9; margin-bottom: 10px; padding-bottom: 5px; font-weight: bold; color: #1565c0; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid no-print">
+    <div class="branding shadow">
+        <h2 class="mb-1">VOTER LIST MANAGEMENT SYSTEM</h2>
+        <h6 class="mb-0">Developed by Amit Murolia, Vidhan Sabha: Pilani, Dist: Jhunjhunu</h6>
+    </div>
+
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-md-4"><div class="tally-box bg-white border-primary border text-primary">Main (Format A) Total: <span id="mT">0</span></div></div>
+        <div class="col-md-4"><div class="tally-box bg-white border-danger border text-danger">ASD List Total: <span id="aT">0</span></div></div>
+        <div class="col-md-4"><div class="tally-box bg-dark text-white shadow">Grand Total (कुल योग): <span id="gT">0</span></div></div>
+    </div>
+
+    <div class="card p-3 mb-4 bg-white shadow-sm border-0 small">
+        <div class="row g-2">
+            <div class="col-md-2"><label class="fw-bold small">Year / वर्ष</label><input type="text" id="mYear" class="form-control" onchange="saveSettings()"></div>
+            <div class="col-md-3"><label class="fw-bold small">District / जिला</label><input type="text" id="mDist" class="form-control" onchange="saveSettings()"></div>
+            <div class="col-md-3"><label class="fw-bold small">Council / नगरपालिका</label><input type="text" id="mCouncil" class="form-control" onchange="saveSettings()"></div>
+            <div class="col-md-2"><label class="fw-bold small">Praganak / प्रगणक</label><input type="text" id="mPrag" class="form-control" onchange="saveSettings()"></div>
+            <div class="col-md-2"><label class="fw-bold small">Booth No. / भाग संख्या</label><input type="text" id="mBooth" class="form-control" onchange="saveSettings()"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5">
+            <ul class="nav nav-pills mb-3 bg-white p-2 rounded shadow-sm border">
+                <li class="nav-item w-50"><button class="nav-link active w-100" id="btnA" onclick="showTab('tabA')">FORMAT A ENTRY</button></li>
+                <li class="nav-item w-50"><button class="nav-link w-100 text-danger" id="btnASD" onclick="showTab('tabASD')">ASD ENTRY</button></li>
+            </ul>
+
+            <div id="tabA" class="card p-3 border-primary shadow-sm mb-3">
+                <form id="formA">
+                    <div class="row mb-2">
+                        <div class="col"><label class="fw-bold small">Cons. No. / वि.स. संख्या</label><input type="number" id="aCons" class="form-control" required></div>
+                        <div class="col"><label class="fw-bold small">Part No. / भाग संख्या</label><input type="number" id="aPart" class="form-control" required></div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col"><label class="fw-bold small">From Sr. / क्रमांक से</label><input type="number" id="aFrom" class="form-control" required></div>
+                        <div class="col"><label class="fw-bold small">To Sr. / क्रमांक तक</label><input type="number" id="aTo" class="form-control" placeholder="Blank=Single"></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col"><label class="fw-bold small">Ward No. / वार्ड संख्या</label><input type="number" id="aWard" class="form-control" required></div>
+                        <div class="col"><label class="fw-bold small">Ward Part / वार्ड भाग</label><input type="number" id="aWPart" class="form-control"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold mb-2 shadow">SAVE DATA / सुरक्षित करें</button>
+                    <button type="button" onclick="printReport('printA')" class="btn btn-dark w-100 btn-sm">PRINT FULL FORMAT A</button>
+                </form>
+                <div class="border-top mt-3 pt-2">
+                    <label class="small fw-bold text-primary">Ward Search / वार्ड खोजें:</label>
+                    <select id="wardFilterList" class="form-select form-select-sm mb-2" onchange="showSearchMiniPage('WARD')"><option value="">Select Ward</option></select>
+                    <div id="wardMiniPage" class="search-page d-none">
+                        <div class="search-header"><span>WARD VIEW</span><button onclick="printFiltered('WARD')" class="btn btn-primary btn-sm py-0" style="font-size: 10px;">PRINT</button></div>
+                        <div id="wardMiniResults" class="small"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tabASD" class="card p-3 border-danger shadow-sm d-none mb-3">
+                <form id="formASD">
+                    <div class="row mb-2">
+                        <div class="col"><label class="fw-bold small text-danger">VS Name / वि.स. नाम</label><input type="text" id="asdVS" class="form-control" required></div>
+                        <div class="col"><label class="fw-bold small text-danger">Bhag No. / भाग संख्या</label><input type="number" id="asdPart" class="form-control" required></div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col"><label class="fw-bold small text-danger">Matdata Sr. / मतदाता क्रमांक</label><input type="number" id="asdSr" class="form-control" required></div>
+                        <div class="col"><label class="fw-bold small text-danger">Name / मतदाता का नाम</label><input type="text" id="asdName" class="form-control" required></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col"><label class="fw-bold small text-danger">Ward No. / वार्ड संख्या</label><input type="number" id="asdWard" class="form-control" required></div>
+                        <div class="col"><label class="fw-bold small text-danger">Reason / कारण</label><select id="asdRes" class="form-select small"><option value="मृतक">मृतक</option><option value="स्थानांतरित">स्थानांतरित</option><option value="दोहरी">दोहरी</option><option value="अनुपस्थित">अनुपस्थित</option></select></div>
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100 fw-bold mb-2 shadow">SAVE DATA / सुरक्षित करें</button>
+                    <button type="button" onclick="printReport('printASD')" class="btn btn-dark w-100 btn-sm">PRINT FULL ASD LIST</button>
+                </form>
+                <div class="border-top mt-3 pt-2">
+                    <label class="small fw-bold text-danger">Category Search / श्रेणी खोजें:</label>
+                    <select id="asdFilterList" class="form-select form-select-sm mb-2" onchange="showSearchMiniPage('ASD')">
+                        <option value="">Select Category</option><option value="मृतक">मृतक</option><option value="स्थानांतरित">स्थानांतरित</option><option value="दोहरी">दोहरी</option><option value="अनुपस्थित">अनुपस्थित</option>
+                    </select>
+                    <div id="asdMiniPage" class="search-page d-none" style="background: #ffebee; border-color: #ef5350;">
+                        <div class="search-header" style="color: #c62828;"><span>ASD VIEW</span><button onclick="printFiltered('ASD_CAT')" class="btn btn-danger btn-sm py-0" style="font-size: 10px;">PRINT</button></div>
+                        <div id="asdMiniResults" class="small"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card p-2 shadow-sm overflow-auto" style="height: 600px;">
+                <div class="d-flex justify-content-between mb-2">
+                    <small class="fw-bold text-muted">Summary / विवरण</small>
+                    <button onclick="clearAllData()" class="btn btn-outline-danger btn-sm py-0" style="font-size: 10px;">Clear All Data</button>
+                </div>
+                <table class="table table-sm border small table-hover">
+                    <thead class="table-light"><tr><th>List Type</th><th>Range/Sr</th><th>Ward</th><th>X</th></tr></thead>
+                    <tbody id="log"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="printA" class="print-section">
+    <div class="header-main">STATE ELECTION COMMISSION, RAJASTHAN</div>
+    <div class="header-main" style="font-size: 16px;">Draft Electoral Roll Control Chart</div>
+    <div style="display: flex; border: 1px solid black; margin-top: 10px; font-weight: bold;">
+        <div style="flex:1; padding: 5px;">Council / Corporation : <span class="lblCouncil"></span></div>
+        <div style="flex:1; padding: 5px; border-left: 1px solid black; width: 250px;">District : <span class="lblDist"></span></div>
+    </div>
+    <div class="instr">PLEASE USE THIS TEMPLATE TO CREATE ELECTORAL ROLLS. PLEASE ENTER VALUES IN ENGLISH. PLEASE DO NOT CHANGE OR MAKE COPIES OF THIS TEMPLATE. PLEASE START FILLING THE TEMPLATE FROM SR NO. 1.</div>
+    <table>
+        <thead><tr><th>S.N.</th><th>Assem Constituency No.</th><th>Assem Part No.</th><th>From Sr.No.</th><th>To Sr.No.</th><th>Ward No.</th><th>Ward Part No.</th><th>Total</th></tr></thead>
+        <tbody id="pBodyA"></tbody>
+    </table>
+    <div class="footer-container"><div class="footer-sign"><div class="sign-left">प्रगणक का नाम: <span class="lblPrag"></span><br>भाग संख्या: <span class="lblBooth"></span></div><div class="sign-right">(हस्ताक्षर प्रगणक)</div></div></div>
+</div>
+
+<div id="printASD" class="print-section">
+    <div class="header-main" style="font-size: 18px;">राज्य निर्वाचन आयोग, राजस्थान</div>
+    <div class="text-center fw-bold">स्थानांतरित/मृतक/दोहरी प्रविष्टि मतदाताओं की सूचना - <span class="lblYear"></span></div>
+    <div style="display: flex; justify-content: space-between; margin-top: 10px; font-weight: bold; border-bottom: 2px solid black;">
+        <span>नगरपालिका: <span class="lblCouncil"></span></span><span>जिला: <span class="lblDist"></span></span>
+    </div>
+    <table>
+        <thead><tr><th>क्र.सं.</th><th>वि.स. नाम</th><th>भाग संख्या</th><th>मतदाता क्रमांक</th><th>मतदाता का नाम</th><th>वार्ड संख्या</th><th>कारण (ASD)</th></tr></thead>
+        <tbody id="bodyASD"></tbody>
+    </table>
+    <div class="footer-container"><div class="footer-sign"><div class="sign-left">प्रगणक का नाम: <span class="lblPrag"></span><br>भाग संख्या: <span class="lblBooth"></span></div><div class="sign-right">(हस्ताक्षर प्रगणक)</div></div></div>
+</div>
+
+<script>
+    let dbA = JSON.parse(localStorage.getItem('dbA')) || [];
+    let dbASD = JSON.parse(localStorage.getItem('dbASD')) || [];
+
+    window.onload = function() { loadSettings(); updateUI(); };
+
+    function saveSettings() {
+        const s = { year: document.getElementById('mYear').value, dist: document.getElementById('mDist').value, council: document.getElementById('mCouncil').value, prag: document.getElementById('mPrag').value, booth: document.getElementById('mBooth').value };
+        localStorage.setItem('voterSettings', JSON.stringify(s));
+    }
+
+    function loadSettings() {
+        const s = JSON.parse(localStorage.getItem('voterSettings'));
+        if(s) { document.getElementById('mYear').value = s.year || "2026"; document.getElementById('mDist').value = s.dist || ""; document.getElementById('mCouncil').value = s.council || ""; document.getElementById('mPrag').value = s.prag || ""; document.getElementById('mBooth').value = s.booth || ""; }
+    }
+
+    function isDuplicate(f, t) {
+        return dbA.some(d => (f <= d.to && t >= d.from)) || dbASD.some(d => (d.sr >= f && d.sr <= t));
+    }
+
+    document.getElementById('formA').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let f = parseInt(document.getElementById('aFrom').value), tIn = document.getElementById('aTo').value;
+        let t = tIn === "" ? f : parseInt(tIn);
+        if(isDuplicate(f, t)) { alert("⚠️ DUPLICATE ENTRY!"); return; }
+        dbA.push({ cons: document.getElementById('aCons').value, part: document.getElementById('aPart').value, from: f, to: t, ward: document.getElementById('aWard').value, wp: document.getElementById('aWPart').value || '', count: (t-f+1) });
+        sync(); this.reset();
+    });
+
+    document.getElementById('formASD').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let sr = parseInt(document.getElementById('asdSr').value);
+        if(isDuplicate(sr, sr)) { alert("⚠️ DUPLICATE ENTRY!"); return; }
+        dbASD.push({ vs: document.getElementById('asdVS').value, part: document.getElementById('asdPart').value, sr: sr, name: document.getElementById('asdName').value, ward: document.getElementById('asdWard').value, res: document.getElementById('asdRes').value });
+        sync(); this.reset();
+    });
+
+    function showTab(id) {
+        document.getElementById('tabA').classList.toggle('d-none', id !== 'tabA');
+        document.getElementById('tabASD').classList.toggle('d-none', id !== 'tabASD');
+        document.getElementById('btnA').classList.toggle('active', id === 'tabA');
+        document.getElementById('btnASD').classList.toggle('active', id === 'tabASD');
+    }
+
+    function sync() { localStorage.setItem('dbA', JSON.stringify(dbA)); localStorage.setItem('dbASD', JSON.stringify(dbASD)); updateUI(); }
+
+    function updateUI() {
+        const log = document.getElementById('log'), wf = document.getElementById('wardFilterList');
+        log.innerHTML = ''; let mSum = 0, aSum = 0, ws = new Set();
+        dbA.forEach((d, i) => { mSum += d.count; ws.add(d.ward); log.innerHTML += `<tr class="table-primary"><td>Format A</td><td>${d.from}-${d.to}</td><td>${d.ward}</td><td><button onclick="dbA.splice(${i},1);sync()" class="btn btn-sm btn-outline-danger">X</button></td></tr>`; });
+        dbASD.forEach((d, i) => { aSum++; log.innerHTML += `<tr class="table-danger"><td>ASD</td><td>${d.sr}</td><td>${d.ward}</td><td><button onclick="dbASD.splice(${i},1);sync()" class="btn btn-sm btn-outline-danger">X</button></td></tr>`; });
+        wf.innerHTML = '<option value="">Select Ward</option>'; Array.from(ws).sort((a,b)=>a-b).forEach(w => wf.innerHTML += `<option value="${w}">${w}</option>`);
+        document.getElementById('mT').innerText = mSum; document.getElementById('aT').innerText = aSum; document.getElementById('gT').innerText = mSum + aSum;
+    }
+
+    function showSearchMiniPage(type) {
+        if(type === 'WARD') {
+            let w = document.getElementById('wardFilterList').value;
+            let container = document.getElementById('wardMiniPage'), res = document.getElementById('wardMiniResults');
+            if(!w) { container.classList.add('d-none'); return; }
+            res.innerHTML = "वार्ड " + w + " में : " + (dbA.filter(d => d.ward == w).map(d => `${d.from}-${d.to}`).join(", "));
+            container.classList.remove('d-none');
+        } else {
+            let r = document.getElementById('asdFilterList').value;
+            let container = document.getElementById('asdMiniPage'), res = document.getElementById('asdMiniResults');
+            if(!r) { container.classList.add('d-none'); return; }
+            res.innerHTML = r + " की सूची : " + (dbASD.filter(d => d.res == r).map(d => `${d.sr}(${d.name})`).join(", "));
+            container.classList.remove('d-none');
+        }
+    }
+
+    function printReport(id, filterData = null) {
+        document.querySelectorAll('.print-section').forEach(el => el.classList.remove('print-active'));
+        const bA = document.getElementById('pBodyA'), bASD = document.getElementById('bodyASD');
+        bA.innerHTML = ''; bASD.innerHTML = '';
+        document.querySelectorAll('.lblDist').forEach(e => e.innerText = document.getElementById('mDist').value);
+        document.querySelectorAll('.lblCouncil').forEach(e => e.innerText = document.getElementById('mCouncil').value);
+        document.querySelectorAll('.lblPrag').forEach(e => e.innerText = document.getElementById('mPrag').value);
+        document.querySelectorAll('.lblBooth').forEach(e => e.innerText = document.getElementById('mBooth').value);
+        document.querySelectorAll('.lblYear').forEach(e => e.innerText = document.getElementById('mYear').value);
+        if(id === 'printA') (filterData || dbA).forEach((d, i) => bA.innerHTML += `<tr><td>${i+1}</td><td>${d.cons}</td><td>${d.part}</td><td>${d.from}</td><td>${d.to}</td><td>${d.ward}</td><td>${d.wp}</td><td>${d.count}</td></tr>`);
+        else (filterData || dbASD).forEach((d, i) => bASD.innerHTML += `<tr><td>${i+1}</td><td>${d.vs}</td><td>${d.part}</td><td>${d.sr}</td><td>${d.name}</td><td>${d.ward}</td><td>${d.res}</td></tr>`);
+        document.getElementById(id).classList.add('print-active');
+        window.print();
+    }
+
+    function printFiltered(type) { 
+        if(type === 'WARD') { let w = document.getElementById('wardFilterList').value; if(w) printReport('printA', dbA.filter(d => d.ward == w)); }
+        if(type === 'ASD_CAT') { let r = document.getElementById('asdFilterList').value; if(r) printReport('printASD', dbASD.filter(d => d.res == r)); }
+    }
+    
+    function clearAllData() { if(confirm("Are you sure?")) { localStorage.clear(); location.reload(); } }
+</script>
+</body>
+</html>
