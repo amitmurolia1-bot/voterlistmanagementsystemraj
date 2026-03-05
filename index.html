@@ -124,7 +124,7 @@
         <div class="col-md-7">
             <div class="card p-2 shadow-sm overflow-auto" style="height: 600px;">
                 <div class="d-flex justify-content-between mb-2">
-                    <small class="fw-bold text-muted">Summary / विवरण</small>
+                    <small class="fw-bold text-muted">Summary / विवरण (Sorted by Sr.No.)</small>
                     <button onclick="clearAllData()" class="btn btn-outline-danger btn-sm py-0" style="font-size: 10px;">Clear All Data</button>
                 </div>
                 <table class="table table-sm border small table-hover">
@@ -208,7 +208,17 @@
         document.getElementById('btnASD').classList.toggle('active', id === 'tabASD');
     }
 
-    function sync() { localStorage.setItem('dbA', JSON.stringify(dbA)); localStorage.setItem('dbASD', JSON.stringify(dbASD)); updateUI(); }
+    // Logic for sorting and syncing data
+    function sync() { 
+        // Auto Sort Format A by 'From' column
+        dbA.sort((a, b) => a.from - b.from);
+        // Auto Sort ASD List by 'Sr No' column
+        dbASD.sort((a, b) => a.sr - b.sr);
+
+        localStorage.setItem('dbA', JSON.stringify(dbA)); 
+        localStorage.setItem('dbASD', JSON.stringify(dbASD)); 
+        updateUI(); 
+    }
 
     function updateUI() {
         const log = document.getElementById('log'), wf = document.getElementById('wardFilterList');
@@ -244,8 +254,16 @@
         document.querySelectorAll('.lblPrag').forEach(e => e.innerText = document.getElementById('mPrag').value);
         document.querySelectorAll('.lblBooth').forEach(e => e.innerText = document.getElementById('mBooth').value);
         document.querySelectorAll('.lblYear').forEach(e => e.innerText = document.getElementById('mYear').value);
-        if(id === 'printA') (filterData || dbA).forEach((d, i) => bA.innerHTML += `<tr><td>${i+1}</td><td>${d.cons}</td><td>${d.part}</td><td>${d.from}</td><td>${d.to}</td><td>${d.ward}</td><td>${d.wp}</td><td>${d.count}</td></tr>`);
-        else (filterData || dbASD).forEach((d, i) => bASD.innerHTML += `<tr><td>${i+1}</td><td>${d.vs}</td><td>${d.part}</td><td>${d.sr}</td><td>${d.name}</td><td>${d.ward}</td><td>${d.res}</td></tr>`);
+        
+        // Sorting filterData as well if available
+        if(id === 'printA') {
+            let data = filterData ? [...filterData].sort((a,b)=>a.from - b.from) : dbA;
+            data.forEach((d, i) => bA.innerHTML += `<tr><td>${i+1}</td><td>${d.cons}</td><td>${d.part}</td><td>${d.from}</td><td>${d.to}</td><td>${d.ward}</td><td>${d.wp}</td><td>${d.count}</td></tr>`);
+        } else {
+            let data = filterData ? [...filterData].sort((a,b)=>a.sr - b.sr) : dbASD;
+            data.forEach((d, i) => bASD.innerHTML += `<tr><td>${i+1}</td><td>${d.vs}</td><td>${d.part}</td><td>${d.sr}</td><td>${d.name}</td><td>${d.ward}</td><td>${d.res}</td></tr>`);
+        }
+        
         document.getElementById(id).classList.add('print-active');
         window.print();
     }
