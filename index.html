@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Voter Management System - Amit Murolia</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { background-color: #f1f5f9; font-family: 'Sakal Bharti', Arial, sans-serif; }
         .no-print { padding: 20px; }
@@ -30,7 +31,7 @@
         .print-section { display: none; }
         .tally-box { font-weight: bold; padding: 10px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .search-page { background: #e3f2fd; border: 2px solid #2196f3; padding: 15px; border-radius: 10px; margin-top: 15px; }
-        .search-header { border-bottom: 1px solid #90caf9; margin-bottom: 10px; padding-bottom: 5px; font-weight: bold; color: #1565c0; display: flex; justify-content: space-between; align-items: center; }
+        .btn-edit { background: #ffc107; color: #000; border: none; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 5px; }
     </style>
 </head>
 <body>
@@ -66,6 +67,7 @@
 
             <div id="tabA" class="card p-3 border-primary shadow-sm mb-3">
                 <form id="formA">
+                    <input type="hidden" id="editIdxA" value="-1">
                     <div class="row mb-2">
                         <div class="col"><label class="fw-bold small">Cons. No. / वि.स. संख्या</label><input type="number" id="aCons" class="form-control" required></div>
                         <div class="col"><label class="fw-bold small">Part No. / भाग संख्या</label><input type="number" id="aPart" class="form-control" required></div>
@@ -78,21 +80,17 @@
                         <div class="col"><label class="fw-bold small">Ward No. / वार्ड संख्या</label><input type="number" id="aWard" class="form-control" required></div>
                         <div class="col"><label class="fw-bold small">Ward Part / वार्ड भाग</label><input type="number" id="aWPart" class="form-control"></div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 fw-bold mb-2 shadow">SAVE DATA / सुरक्षित करें</button>
-                    <button type="button" onclick="printReport('printA')" class="btn btn-dark w-100 btn-sm">PRINT FULL FORMAT A</button>
-                </form>
-                <div class="border-top mt-3 pt-2">
-                    <label class="small fw-bold text-primary">Ward Search / वार्ड खोजें:</label>
-                    <select id="wardFilterList" class="form-select form-select-sm mb-2" onchange="showSearchMiniPage('WARD')"><option value="">Select Ward</option></select>
-                    <div id="wardMiniPage" class="search-page d-none">
-                        <div class="search-header"><span>WARD VIEW</span><button onclick="printFiltered('WARD')" class="btn btn-primary btn-sm py-0" style="font-size: 10px;">PRINT</button></div>
-                        <div id="wardMiniResults" class="small"></div>
+                    <button type="submit" id="saveBtnA" class="btn btn-primary w-100 fw-bold mb-2 shadow">SAVE DATA / सुरक्षित करें</button>
+                    <div class="d-flex gap-1 mb-2">
+                        <button type="button" onclick="printReport('printA')" class="btn btn-dark w-50 btn-sm">PRINT FULL FORMAT A</button>
+                        <button type="button" onclick="exportExcel('A')" class="btn btn-success w-50 btn-sm">EXPORT TO EXCEL</button>
                     </div>
-                </div>
+                </form>
             </div>
 
             <div id="tabASD" class="card p-3 border-danger shadow-sm d-none mb-3">
                 <form id="formASD">
+                    <input type="hidden" id="editIdxASD" value="-1">
                     <div class="row mb-2">
                         <div class="col"><label class="fw-bold small text-danger">VS Name / वि.स. नाम</label><input type="text" id="asdVS" class="form-control" required></div>
                         <div class="col"><label class="fw-bold small text-danger">Bhag No. / भाग संख्या</label><input type="number" id="asdPart" class="form-control" required></div>
@@ -105,30 +103,23 @@
                         <div class="col"><label class="fw-bold small text-danger">Ward No. / वार्ड संख्या</label><input type="number" id="asdWard" class="form-control" required></div>
                         <div class="col"><label class="fw-bold small text-danger">Reason / कारण</label><select id="asdRes" class="form-select small"><option value="मृतक">मृतक</option><option value="स्थानांतरित">स्थानांतरित</option><option value="दोहरी">दोहरी</option><option value="अनुपस्थित">अनुपस्थित</option></select></div>
                     </div>
-                    <button type="submit" class="btn btn-danger w-100 fw-bold mb-2 shadow">SAVE DATA / सुरक्षित करें</button>
-                    <button type="button" onclick="printReport('printASD')" class="btn btn-dark w-100 btn-sm">PRINT FULL ASD LIST</button>
-                </form>
-                <div class="border-top mt-3 pt-2">
-                    <label class="small fw-bold text-danger">Category Search / श्रेणी खोजें:</label>
-                    <select id="asdFilterList" class="form-select form-select-sm mb-2" onchange="showSearchMiniPage('ASD')">
-                        <option value="">Select Category</option><option value="मृतक">मृतक</option><option value="स्थानांतरित">स्थानांतरित</option><option value="दोहरी">दोहरी</option><option value="अनुपस्थित">अनुपस्थित</option>
-                    </select>
-                    <div id="asdMiniPage" class="search-page d-none" style="background: #ffebee; border-color: #ef5350;">
-                        <div class="search-header" style="color: #c62828;"><span>ASD VIEW</span><button onclick="printFiltered('ASD_CAT')" class="btn btn-danger btn-sm py-0" style="font-size: 10px;">PRINT</button></div>
-                        <div id="asdMiniResults" class="small"></div>
+                    <button type="submit" id="saveBtnASD" class="btn btn-danger w-100 fw-bold mb-2 shadow">SAVE DATA / सुरक्षित करें</button>
+                    <div class="d-flex gap-1 mb-2">
+                        <button type="button" onclick="printReport('printASD')" class="btn btn-dark w-50 btn-sm">PRINT FULL ASD LIST</button>
+                        <button type="button" onclick="exportExcel('ASD')" class="btn btn-success w-50 btn-sm">EXPORT TO EXCEL</button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
 
         <div class="col-md-7">
             <div class="card p-2 shadow-sm overflow-auto" style="height: 600px;">
                 <div class="d-flex justify-content-between mb-2">
-                    <small class="fw-bold text-muted">Summary / विवरण (Sorted by Sr.No.)</small>
+                    <small class="fw-bold text-muted">Summary / विवरण (Auto-Sorted)</small>
                     <button onclick="clearAllData()" class="btn btn-outline-danger btn-sm py-0" style="font-size: 10px;">Clear All Data</button>
                 </div>
                 <table class="table table-sm border small table-hover">
-                    <thead class="table-light"><tr><th>List Type</th><th>Range/Sr</th><th>Ward</th><th>X</th></tr></thead>
+                    <thead class="table-light"><tr><th>List Type</th><th>Range/Sr</th><th>Ward</th><th>Action</th></tr></thead>
                     <tbody id="log"></tbody>
                 </table>
             </div>
@@ -180,25 +171,73 @@
         if(s) { document.getElementById('mYear').value = s.year || "2026"; document.getElementById('mDist').value = s.dist || ""; document.getElementById('mCouncil').value = s.council || ""; document.getElementById('mPrag').value = s.prag || ""; document.getElementById('mBooth').value = s.booth || ""; }
     }
 
-    function isDuplicate(f, t) {
-        return dbA.some(d => (f <= d.to && t >= d.from)) || dbASD.some(d => (d.sr >= f && d.sr <= t));
+    function isDuplicate(f, t, skipIdx, type) {
+        if(type === 'A') {
+            return dbA.some((d, i) => i !== skipIdx && (f <= d.to && t >= d.from)) || dbASD.some(d => (d.sr >= f && d.sr <= t));
+        } else {
+            return dbA.some(d => (f >= d.from && f <= d.to)) || dbASD.some((d, i) => i !== skipIdx && d.sr === f);
+        }
+    }
+
+    // Format A Edit
+    function editA(index) {
+        const d = dbA[index];
+        document.getElementById('aCons').value = d.cons;
+        document.getElementById('aPart').value = d.part;
+        document.getElementById('aFrom').value = d.from;
+        document.getElementById('aTo').value = d.to === d.from ? "" : d.to;
+        document.getElementById('aWard').value = d.ward;
+        document.getElementById('aWPart').value = d.wp;
+        document.getElementById('editIdxA').value = index;
+        document.getElementById('saveBtnA').innerText = "UPDATE DATA / अपडेट करें";
+        showTab('tabA');
+    }
+
+    // ASD Edit
+    function editASD(index) {
+        const d = dbASD[index];
+        document.getElementById('asdVS').value = d.vs;
+        document.getElementById('asdPart').value = d.part;
+        document.getElementById('asdSr').value = d.sr;
+        document.getElementById('asdName').value = d.name;
+        document.getElementById('asdWard').value = d.ward;
+        document.getElementById('asdRes').value = d.res;
+        document.getElementById('editIdxASD').value = index;
+        document.getElementById('saveBtnASD').innerText = "UPDATE DATA / अपडेट करें";
+        showTab('tabASD');
     }
 
     document.getElementById('formA').addEventListener('submit', function(e) {
         e.preventDefault();
+        let idx = parseInt(document.getElementById('editIdxA').value);
         let f = parseInt(document.getElementById('aFrom').value), tIn = document.getElementById('aTo').value;
         let t = tIn === "" ? f : parseInt(tIn);
-        if(isDuplicate(f, t)) { alert("⚠️ DUPLICATE ENTRY!"); return; }
-        dbA.push({ cons: document.getElementById('aCons').value, part: document.getElementById('aPart').value, from: f, to: t, ward: document.getElementById('aWard').value, wp: document.getElementById('aWPart').value || '', count: (t-f+1) });
-        sync(); this.reset();
+        if(isDuplicate(f, t, idx, 'A')) { alert("⚠️ DUPLICATE ENTRY!"); return; }
+        
+        let data = { cons: document.getElementById('aCons').value, part: document.getElementById('aPart').value, from: f, to: t, ward: document.getElementById('aWard').value, wp: document.getElementById('aWPart').value || '', count: (t-f+1) };
+        
+        if(idx === -1) dbA.push(data); else dbA[idx] = data;
+        
+        this.reset();
+        document.getElementById('editIdxA').value = "-1";
+        document.getElementById('saveBtnA').innerText = "SAVE DATA / सुरक्षित करें";
+        sync();
     });
 
     document.getElementById('formASD').addEventListener('submit', function(e) {
         e.preventDefault();
+        let idx = parseInt(document.getElementById('editIdxASD').value);
         let sr = parseInt(document.getElementById('asdSr').value);
-        if(isDuplicate(sr, sr)) { alert("⚠️ DUPLICATE ENTRY!"); return; }
-        dbASD.push({ vs: document.getElementById('asdVS').value, part: document.getElementById('asdPart').value, sr: sr, name: document.getElementById('asdName').value, ward: document.getElementById('asdWard').value, res: document.getElementById('asdRes').value });
-        sync(); this.reset();
+        if(isDuplicate(sr, sr, idx, 'ASD')) { alert("⚠️ DUPLICATE ENTRY!"); return; }
+        
+        let data = { vs: document.getElementById('asdVS').value, part: document.getElementById('asdPart').value, sr: sr, name: document.getElementById('asdName').value, ward: document.getElementById('asdWard').value, res: document.getElementById('asdRes').value };
+        
+        if(idx === -1) dbASD.push(data); else dbASD[idx] = data;
+        
+        this.reset();
+        document.getElementById('editIdxASD').value = "-1";
+        document.getElementById('saveBtnASD').innerText = "SAVE DATA / सुरक्षित करें";
+        sync();
     });
 
     function showTab(id) {
@@ -208,44 +247,38 @@
         document.getElementById('btnASD').classList.toggle('active', id === 'tabASD');
     }
 
-    // Logic for sorting and syncing data
     function sync() { 
-        // Auto Sort Format A by 'From' column
-        dbA.sort((a, b) => a.from - b.from);
-        // Auto Sort ASD List by 'Sr No' column
-        dbASD.sort((a, b) => a.sr - b.sr);
-
+        dbA.sort((a,b) => a.from - b.from);
+        dbASD.sort((a,b) => a.sr - b.sr);
         localStorage.setItem('dbA', JSON.stringify(dbA)); 
         localStorage.setItem('dbASD', JSON.stringify(dbASD)); 
         updateUI(); 
     }
 
     function updateUI() {
-        const log = document.getElementById('log'), wf = document.getElementById('wardFilterList');
-        log.innerHTML = ''; let mSum = 0, aSum = 0, ws = new Set();
-        dbA.forEach((d, i) => { mSum += d.count; ws.add(d.ward); log.innerHTML += `<tr class="table-primary"><td>Format A</td><td>${d.from}-${d.to}</td><td>${d.ward}</td><td><button onclick="dbA.splice(${i},1);sync()" class="btn btn-sm btn-outline-danger">X</button></td></tr>`; });
-        dbASD.forEach((d, i) => { aSum++; log.innerHTML += `<tr class="table-danger"><td>ASD</td><td>${d.sr}</td><td>${d.ward}</td><td><button onclick="dbASD.splice(${i},1);sync()" class="btn btn-sm btn-outline-danger">X</button></td></tr>`; });
-        wf.innerHTML = '<option value="">Select Ward</option>'; Array.from(ws).sort((a,b)=>a-b).forEach(w => wf.innerHTML += `<option value="${w}">${w}</option>`);
+        const log = document.getElementById('log');
+        log.innerHTML = ''; let mSum = 0, aSum = 0;
+        dbA.forEach((d, i) => { mSum += d.count; log.innerHTML += `<tr class="table-primary"><td>Format A</td><td>${d.from}-${d.to}</td><td>${d.ward}</td><td><button onclick="editA(${i})" class="btn-edit">E</button><button onclick="dbA.splice(${i},1);sync()" class="btn btn-sm btn-outline-danger py-0">X</button></td></tr>`; });
+        dbASD.forEach((d, i) => { aSum++; log.innerHTML += `<tr class="table-danger"><td>ASD</td><td>${d.sr}</td><td>${d.ward}</td><td><button onclick="editASD(${i})" class="btn-edit">E</button><button onclick="dbASD.splice(${i},1);sync()" class="btn btn-sm btn-outline-danger py-0">X</button></td></tr>`; });
         document.getElementById('mT').innerText = mSum; document.getElementById('aT').innerText = aSum; document.getElementById('gT').innerText = mSum + aSum;
     }
 
-    function showSearchMiniPage(type) {
-        if(type === 'WARD') {
-            let w = document.getElementById('wardFilterList').value;
-            let container = document.getElementById('wardMiniPage'), res = document.getElementById('wardMiniResults');
-            if(!w) { container.classList.add('d-none'); return; }
-            res.innerHTML = "वार्ड " + w + " में : " + (dbA.filter(d => d.ward == w).map(d => `${d.from}-${d.to}`).join(", "));
-            container.classList.remove('d-none');
+    function exportExcel(type) {
+        let data = [], fname = "";
+        if(type === 'A') {
+            fname = "Format_A.xlsx";
+            data = dbA.map((d, i) => ({ "S.N.": i+1, "Assembly No": d.cons, "Part No": d.part, "From": d.from, "To": d.to, "Ward": d.ward, "W.Part": d.wp, "Total": d.count }));
         } else {
-            let r = document.getElementById('asdFilterList').value;
-            let container = document.getElementById('asdMiniPage'), res = document.getElementById('asdMiniResults');
-            if(!r) { container.classList.add('d-none'); return; }
-            res.innerHTML = r + " की सूची : " + (dbASD.filter(d => d.res == r).map(d => `${d.sr}(${d.name})`).join(", "));
-            container.classList.remove('d-none');
+            fname = "ASD_List.xlsx";
+            data = dbASD.map((d, i) => ({ "S.N.": i+1, "VS Name": d.vs, "Part": d.part, "Sr No": d.sr, "Name": d.name, "Ward": d.ward, "Reason": d.res }));
         }
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+        XLSX.writeFile(wb, fname);
     }
 
-    function printReport(id, filterData = null) {
+    function printReport(id) {
         document.querySelectorAll('.print-section').forEach(el => el.classList.remove('print-active'));
         const bA = document.getElementById('pBodyA'), bASD = document.getElementById('bodyASD');
         bA.innerHTML = ''; bASD.innerHTML = '';
@@ -255,22 +288,11 @@
         document.querySelectorAll('.lblBooth').forEach(e => e.innerText = document.getElementById('mBooth').value);
         document.querySelectorAll('.lblYear').forEach(e => e.innerText = document.getElementById('mYear').value);
         
-        // Sorting filterData as well if available
-        if(id === 'printA') {
-            let data = filterData ? [...filterData].sort((a,b)=>a.from - b.from) : dbA;
-            data.forEach((d, i) => bA.innerHTML += `<tr><td>${i+1}</td><td>${d.cons}</td><td>${d.part}</td><td>${d.from}</td><td>${d.to}</td><td>${d.ward}</td><td>${d.wp}</td><td>${d.count}</td></tr>`);
-        } else {
-            let data = filterData ? [...filterData].sort((a,b)=>a.sr - b.sr) : dbASD;
-            data.forEach((d, i) => bASD.innerHTML += `<tr><td>${i+1}</td><td>${d.vs}</td><td>${d.part}</td><td>${d.sr}</td><td>${d.name}</td><td>${d.ward}</td><td>${d.res}</td></tr>`);
-        }
+        if(id === 'printA') dbA.forEach((d, i) => bA.innerHTML += `<tr><td>${i+1}</td><td>${d.cons}</td><td>${d.part}</td><td>${d.from}</td><td>${d.to}</td><td>${d.ward}</td><td>${d.wp}</td><td>${d.count}</td></tr>`);
+        else dbASD.forEach((d, i) => bASD.innerHTML += `<tr><td>${i+1}</td><td>${d.vs}</td><td>${d.part}</td><td>${d.sr}</td><td>${d.name}</td><td>${d.ward}</td><td>${d.res}</td></tr>`);
         
         document.getElementById(id).classList.add('print-active');
         window.print();
-    }
-
-    function printFiltered(type) { 
-        if(type === 'WARD') { let w = document.getElementById('wardFilterList').value; if(w) printReport('printA', dbA.filter(d => d.ward == w)); }
-        if(type === 'ASD_CAT') { let r = document.getElementById('asdFilterList').value; if(r) printReport('printASD', dbASD.filter(d => d.res == r)); }
     }
     
     function clearAllData() { if(confirm("Are you sure?")) { localStorage.clear(); location.reload(); } }
